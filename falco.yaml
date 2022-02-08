@@ -1,7 +1,7 @@
 plugins:
   - name: docker
     library_path: /etc/falco/docker/libdocker.so
-    init_config: '{"timeWindow": "3s"}'
+    init_config: ''
     open_params: ''
   - name: json
     library_path: /etc/falco/json/libjson.so
