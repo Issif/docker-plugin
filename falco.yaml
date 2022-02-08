@@ -3,11 +3,8 @@ plugins:
     library_path: /etc/falco/docker/libdocker.so
     init_config: ''
     open_params: ''
-  - name: json
-    library_path: /etc/falco/json/libjson.so
-    init_config: ""
 
-load_plugins: [docker,json]
+load_plugins: [docker]
 
 stdout_output:
   enabled: true
