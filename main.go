@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"math"
 	"time"
 
 	"github.com/alecthomas/jsonschema"
@@ -37,19 +36,15 @@ import (
 )
 
 type MyPluginConfig struct {
-	TimeWindow string `json:"timeWindow" jsonschema:"description=Time Window (Default: 2s)"`
 }
 
 type MyPlugin struct {
 	plugins.BasePlugin
 	config MyPluginConfig
-	number uint64
 }
 
 type MyInstance struct {
 	source.BaseInstance
-	timeWindow string
-	buffer     *chan []byte
 }
 
 func init() {
@@ -59,7 +54,6 @@ func init() {
 }
 
 func (p *MyPluginConfig) setDefault() {
-	p.TimeWindow = "2s"
 }
 
 func (m *MyPlugin) Info() *plugins.Info {
@@ -85,7 +79,6 @@ func (m *MyPlugin) InitSchema() *sdk.SchemaInfo {
 }
 
 func (m *MyPlugin) Init(config string) error {
-	m.number = math.MaxUint64
 	m.config.setDefault()
 	json.Unmarshal([]byte(config), &m.config)
 	return nil
@@ -152,10 +145,7 @@ func (p *MyPlugin) Extract(req sdk.ExtractRequest, evt sdk.EventReader) error {
 }
 
 func (m *MyPlugin) Open(params string) (source.Instance, error) {
-	return &MyInstance{
-		timeWindow: m.config.TimeWindow,
-		buffer:     new(chan []byte),
-	}, nil
+	return &MyInstance{}, nil
 }
 
 func (m *MyPlugin) String(in io.ReadSeeker) (string, error) {
