@@ -1,0 +1,7 @@
+- rule: Dummy Rule
+  desc: Dummy Rule
+  condition: docker.status in (start,create,die)
+  output: status=%docker.status from=%docker.from type=%docker.type action=%docker.action name=%docker.attributes.name 
+  priority: DEBUG
+  source: docker
+  tags: [docker]
