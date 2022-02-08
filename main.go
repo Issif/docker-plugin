@@ -22,6 +22,9 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/alecthomas/jsonschema"
@@ -45,7 +48,6 @@ type DockerPlugin struct {
 
 type DockerInstance struct {
 	source.BaseInstance
-	done chan bool
 }
 
 func init() {
@@ -146,7 +148,7 @@ func (p *DockerPlugin) Extract(req sdk.ExtractRequest, evt sdk.EventReader) erro
 }
 
 func (m *DockerPlugin) Open(params string) (source.Instance, error) {
-	return &DockerInstance{done: make(chan bool)}, nil
+	return &DockerInstance{}, nil
 }
 
 func (m *DockerPlugin) String(in io.ReadSeeker) (string, error) {
@@ -172,6 +174,9 @@ func (m *DockerInstance) NextBatch(pState sdk.PluginState, evts sdk.EventWriters
 
 	e := [][]byte{}
 
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
 L:
 	for {
 		expire := time.After(2 * time.Second)
@@ -186,9 +191,8 @@ L:
 			if len(e) != 0 {
 				break L
 			}
-		case <-m.done:
-			ctx.Done()
-			break L
+		case <-c:
+			return 0, sdk.ErrEOF
 		}
 	}
 
@@ -208,8 +212,6 @@ L:
 }
 
 func (m *DockerInstance) Close() {
-	fmt.Println("done")
-	m.done <- true
 }
 
 func main() {}
