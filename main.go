@@ -35,28 +35,29 @@ import (
 	docker "github.com/moby/docker/client"
 )
 
-type MyPluginConfig struct {
+type DockerPluginConfig struct {
 }
 
-type MyPlugin struct {
+type DockerPlugin struct {
 	plugins.BasePlugin
-	config MyPluginConfig
+	config DockerPluginConfig
 }
 
-type MyInstance struct {
+type DockerInstance struct {
 	source.BaseInstance
+	done chan bool
 }
 
 func init() {
-	p := &MyPlugin{}
+	p := &DockerPlugin{}
 	extractor.Register(p)
 	source.Register(p)
 }
 
-func (p *MyPluginConfig) setDefault() {
+func (p *DockerPluginConfig) setDefault() {
 }
 
-func (m *MyPlugin) Info() *plugins.Info {
+func (m *DockerPlugin) Info() *plugins.Info {
 	return &plugins.Info{
 		ID:                 6,
 		Name:               "docker",
@@ -68,8 +69,8 @@ func (m *MyPlugin) Info() *plugins.Info {
 	}
 }
 
-func (m *MyPlugin) InitSchema() *sdk.SchemaInfo {
-	schema, err := jsonschema.Reflect(&MyPluginConfig{}).MarshalJSON()
+func (m *DockerPlugin) InitSchema() *sdk.SchemaInfo {
+	schema, err := jsonschema.Reflect(&DockerPluginConfig{}).MarshalJSON()
 	if err == nil {
 		return &sdk.SchemaInfo{
 			Schema: string(schema),
@@ -78,13 +79,13 @@ func (m *MyPlugin) InitSchema() *sdk.SchemaInfo {
 	return nil
 }
 
-func (m *MyPlugin) Init(config string) error {
+func (m *DockerPlugin) Init(config string) error {
 	m.config.setDefault()
 	json.Unmarshal([]byte(config), &m.config)
 	return nil
 }
 
-func (m *MyPlugin) Fields() []sdk.FieldEntry {
+func (m *DockerPlugin) Fields() []sdk.FieldEntry {
 	return []sdk.FieldEntry{
 		{Type: "string", Name: "docker.status", Desc: "Status"},
 		{Type: "string", Name: "docker.id", Desc: "ID"},
@@ -101,7 +102,7 @@ func (m *MyPlugin) Fields() []sdk.FieldEntry {
 	}
 }
 
-func (p *MyPlugin) Extract(req sdk.ExtractRequest, evt sdk.EventReader) error {
+func (p *DockerPlugin) Extract(req sdk.ExtractRequest, evt sdk.EventReader) error {
 	var data dockerEvents.Message
 
 	rawData, err := ioutil.ReadAll(evt.Reader())
@@ -144,11 +145,11 @@ func (p *MyPlugin) Extract(req sdk.ExtractRequest, evt sdk.EventReader) error {
 	return nil
 }
 
-func (m *MyPlugin) Open(params string) (source.Instance, error) {
-	return &MyInstance{}, nil
+func (m *DockerPlugin) Open(params string) (source.Instance, error) {
+	return &DockerInstance{done: make(chan bool)}, nil
 }
 
-func (m *MyPlugin) String(in io.ReadSeeker) (string, error) {
+func (m *DockerPlugin) String(in io.ReadSeeker) (string, error) {
 	evtBytes, err := ioutil.ReadAll(in)
 	if err != nil {
 		return "", err
@@ -158,7 +159,7 @@ func (m *MyPlugin) String(in io.ReadSeeker) (string, error) {
 	return fmt.Sprintf("%v", evtStr), nil
 }
 
-func (m *MyInstance) NextBatch(pState sdk.PluginState, evts sdk.EventWriters) (int, error) {
+func (m *DockerInstance) NextBatch(pState sdk.PluginState, evts sdk.EventWriters) (int, error) {
 	dclient, err := docker.NewClientWithOpts()
 	if err != nil {
 		panic(err)
@@ -185,6 +186,9 @@ L:
 			if len(e) != 0 {
 				break L
 			}
+		case <-m.done:
+			ctx.Done()
+			break L
 		}
 	}
 
@@ -201,6 +205,11 @@ L:
 	}
 
 	return len(e), nil
+}
+
+func (m *DockerInstance) Close() {
+	fmt.Println("done")
+	m.done <- true
 }
 
 func main() {}
