@@ -37,15 +37,10 @@ import (
 	docker "github.com/moby/docker/client"
 )
 
-// DockerPluginConfig represents the configuration of our plugin, we use json format in this example
-type DockerPluginConfig struct {
-	FlushInterval uint64 `json:"flush_interval" jsonschema:"description=Flush Interval in seconds (Default: 2)"`
-}
-
 // DockerPlugin represents our plugin
 type DockerPlugin struct {
 	plugins.BasePlugin
-	config DockerPluginConfig
+	FlushInterval uint64 `json:"flush_interval" jsonschema:"description=Flush Interval in seconds (Default: 2)"`
 }
 
 // DockerInstance represents a opened stream based on our Plugin
@@ -73,12 +68,12 @@ func (dockerPlugin *DockerPlugin) Info() *plugins.Info {
 	}
 }
 
-// Init is called by the Falco plugin framework as first entry
+// Init is called by the Falco plugin framework as first entry,
 // we use it for setting default configuration values and mapping
 // values from `init_config` (json format for this plugin)
 func (dockerPlugin *DockerPlugin) Init(config string) error {
-	dockerPlugin.config.FlushInterval = 2
-	json.Unmarshal([]byte(config), &dockerPlugin.config)
+	dockerPlugin.FlushInterval = 2
+	json.Unmarshal([]byte(config), &dockerPlugin)
 	return nil
 }
 
@@ -182,7 +177,7 @@ func (dockerInstance *DockerInstance) NextBatch(pState sdk.PluginState, evts sdk
 
 L:
 	for {
-		expire := time.After(time.Duration(dockerPlugin.config.FlushInterval) * time.Second)
+		expire := time.After(time.Duration(dockerPlugin.FlushInterval) * time.Second)
 		select {
 		case m := <-msg:
 			s, _ := json.Marshal(m)
