@@ -27,7 +27,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/alecthomas/jsonschema"
 	"github.com/falcosecurity/plugin-sdk-go/pkg/sdk"
 	"github.com/falcosecurity/plugin-sdk-go/pkg/sdk/plugins"
 	"github.com/falcosecurity/plugin-sdk-go/pkg/sdk/plugins/extractor"
@@ -38,28 +37,31 @@ import (
 	docker "github.com/moby/docker/client"
 )
 
+// DockerPluginConfig represents the configuration of our plugin, we use json format in this example
 type DockerPluginConfig struct {
+	FlushInterval uint64 `json:"flush_interval" jsonschema:"description=Flush Interval in seconds (Default: 2)"`
 }
 
+// DockerPlugin represents our plugin
 type DockerPlugin struct {
 	plugins.BasePlugin
 	config DockerPluginConfig
 }
 
+// DockerInstance represents a opened stream based on our Plugin
 type DockerInstance struct {
 	source.BaseInstance
 }
 
+// init function is used for referencing our plugin to the Falco plugin framework
 func init() {
 	p := &DockerPlugin{}
 	extractor.Register(p)
 	source.Register(p)
 }
 
-func (p *DockerPluginConfig) setDefault() {
-}
-
-func (m *DockerPlugin) Info() *plugins.Info {
+// Info displays information of the plugin to Falco plugin framework
+func (dockerPlugin *DockerPlugin) Info() *plugins.Info {
 	return &plugins.Info{
 		ID:                 6,
 		Name:               "docker",
@@ -71,23 +73,17 @@ func (m *DockerPlugin) Info() *plugins.Info {
 	}
 }
 
-func (m *DockerPlugin) InitSchema() *sdk.SchemaInfo {
-	schema, err := jsonschema.Reflect(&DockerPluginConfig{}).MarshalJSON()
-	if err == nil {
-		return &sdk.SchemaInfo{
-			Schema: string(schema),
-		}
-	}
+// Init is called by the Falco plugin framework as first entry
+// we use it for setting default configuration values and mapping
+// values from `init_config` (json format for this plugin)
+func (dockerPlugin *DockerPlugin) Init(config string) error {
+	dockerPlugin.config.FlushInterval = 2
+	json.Unmarshal([]byte(config), &dockerPlugin.config)
 	return nil
 }
 
-func (m *DockerPlugin) Init(config string) error {
-	m.config.setDefault()
-	json.Unmarshal([]byte(config), &m.config)
-	return nil
-}
-
-func (m *DockerPlugin) Fields() []sdk.FieldEntry {
+// Fields exposes to Falco plugin framework all availables fields for this plugin
+func (dockerPlugin *DockerPlugin) Fields() []sdk.FieldEntry {
 	return []sdk.FieldEntry{
 		{Type: "string", Name: "docker.status", Desc: "Status"},
 		{Type: "string", Name: "docker.id", Desc: "ID"},
@@ -104,7 +100,8 @@ func (m *DockerPlugin) Fields() []sdk.FieldEntry {
 	}
 }
 
-func (p *DockerPlugin) Extract(req sdk.ExtractRequest, evt sdk.EventReader) error {
+// Extracts allows Falco plugin framework to get values for all available fields
+func (dockerPlugin *DockerPlugin) Extract(req sdk.ExtractRequest, evt sdk.EventReader) error {
 	var data dockerEvents.Message
 
 	rawData, err := ioutil.ReadAll(evt.Reader())
@@ -147,11 +144,14 @@ func (p *DockerPlugin) Extract(req sdk.ExtractRequest, evt sdk.EventReader) erro
 	return nil
 }
 
-func (m *DockerPlugin) Open(params string) (source.Instance, error) {
+// Open is called by Falco plugin framework for opening a stream of events, we call that an instance
+func (dockerPlugin *DockerPlugin) Open(params string) (source.Instance, error) {
 	return &DockerInstance{}, nil
 }
 
-func (m *DockerPlugin) String(in io.ReadSeeker) (string, error) {
+// String represents the raw value of on event
+// (not currently used by Falco plugin framework, only there for future usage)
+func (dockerPlugin *DockerPlugin) String(in io.ReadSeeker) (string, error) {
 	evtBytes, err := ioutil.ReadAll(in)
 	if err != nil {
 		return "", err
@@ -161,7 +161,8 @@ func (m *DockerPlugin) String(in io.ReadSeeker) (string, error) {
 	return fmt.Sprintf("%v", evtStr), nil
 }
 
-func (m *DockerInstance) NextBatch(pState sdk.PluginState, evts sdk.EventWriters) (int, error) {
+// NextBatch is called by Falco plugin framework to get a batch of events from the instance
+func (dockerInstance *DockerInstance) NextBatch(pState sdk.PluginState, evts sdk.EventWriters) (int, error) {
 	dclient, err := docker.NewClientWithOpts()
 	if err != nil {
 		panic(err)
@@ -177,9 +178,11 @@ func (m *DockerInstance) NextBatch(pState sdk.PluginState, evts sdk.EventWriters
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
+	dockerPlugin := pState.(*DockerPlugin)
+
 L:
 	for {
-		expire := time.After(2 * time.Second)
+		expire := time.After(time.Duration(dockerPlugin.config.FlushInterval) * time.Second)
 		select {
 		case m := <-msg:
 			s, _ := json.Marshal(m)
@@ -211,7 +214,5 @@ L:
 	return len(e), nil
 }
 
-func (m *DockerInstance) Close() {
-}
-
+// main is mandatory but empty, because the plugin will be used as C library by Falco plugin framework
 func main() {}
