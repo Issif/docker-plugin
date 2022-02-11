@@ -95,7 +95,7 @@ func (dockerPlugin *DockerPlugin) Fields() []sdk.FieldEntry {
 	}
 }
 
-// Extracts allows Falco plugin framework to get values for all available fields
+// Extract allows Falco plugin framework to get values for all available fields
 func (dockerPlugin *DockerPlugin) Extract(req sdk.ExtractRequest, evt sdk.EventReader) error {
 	var data dockerEvents.Message
 
