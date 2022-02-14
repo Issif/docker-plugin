@@ -59,7 +59,7 @@ func init() {
 // Info displays information of the plugin to Falco plugin framework
 func (dockerPlugin *DockerPlugin) Info() *plugins.Info {
 	return &plugins.Info{
-		ID:                 6,
+		ID:                 5,
 		Name:               "docker",
 		Description:        "Docker Events",
 		Contact:            "github.com/falcosecurity/plugins/",
@@ -81,11 +81,11 @@ func (dockerPlugin *DockerPlugin) Init(config string) error {
 // Fields exposes to Falco plugin framework all availables fields for this plugin
 func (dockerPlugin *DockerPlugin) Fields() []sdk.FieldEntry {
 	return []sdk.FieldEntry{
-		{Type: "string", Name: "docker.status", Desc: "Status"},
-		{Type: "string", Name: "docker.id", Desc: "ID"},
-		{Type: "string", Name: "docker.from", Desc: "From"},
-		{Type: "string", Name: "docker.type", Desc: "Type"},
-		{Type: "string", Name: "docker.action", Desc: "Action"},
+		{Type: "string", Name: "docker.status", Desc: "Status of the event"},
+		{Type: "string", Name: "docker.id", Desc: "ID of the event"},
+		{Type: "string", Name: "docker.from", Desc: "From of the event (deprecated)"},
+		{Type: "string", Name: "docker.type", Desc: "Type of the event"},
+		{Type: "string", Name: "docker.action", Desc: "Action of the event"},
 		{Type: "string", Name: "docker.stack.namespace", Desc: "Stack Namespace"},
 		{Type: "string", Name: "docker.node.id", Desc: "Swarm Node ID"},
 		{Type: "string", Name: "docker.swarm.task", Desc: "Swarm Task"},

@@ -1,7 +1,7 @@
 plugins:
   - name: docker
     library_path: /usr/share/falco/plugins/libdocker.so
-    init_config: '{"flush_interval": 1}'
+    init_config: '{"flushinterval": 1}'
     open_params: ''
 
 load_plugins: [docker]
