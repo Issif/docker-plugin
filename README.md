@@ -60,7 +60,7 @@ make
 # Settings
 
 Only `init` accepts settings:
-* `flushinterval`: time en ms between two flushes of events from `docker` to `Falco`
+* `flushinterval`: time en ms between two flushes of events from `docker` to `Falco` (default: 30ms)
 
 # Configurations
 
