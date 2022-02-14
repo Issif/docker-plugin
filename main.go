@@ -22,9 +22,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/falcosecurity/plugin-sdk-go/pkg/sdk"
@@ -40,12 +37,16 @@ import (
 // DockerPlugin represents our plugin
 type DockerPlugin struct {
 	plugins.BasePlugin
-	FlushInterval uint64 `json:"flush_interval" jsonschema:"description=Flush Interval in seconds (Default: 2)"`
+	FlushInterval uint64 `json:"flushInterval" jsonschema:"description=Flush Interval in ms (Default: 30)"`
 }
 
 // DockerInstance represents a opened stream based on our Plugin
 type DockerInstance struct {
 	source.BaseInstance
+	dclient *docker.Client
+	msgC    <-chan dockerEvents.Message
+	errC    <-chan error
+	ctx     context.Context
 }
 
 // init function is used for referencing our plugin to the Falco plugin framework
@@ -72,7 +73,7 @@ func (dockerPlugin *DockerPlugin) Info() *plugins.Info {
 // we use it for setting default configuration values and mapping
 // values from `init_config` (json format for this plugin)
 func (dockerPlugin *DockerPlugin) Init(config string) error {
-	dockerPlugin.FlushInterval = 2
+	dockerPlugin.FlushInterval = 30
 	json.Unmarshal([]byte(config), &dockerPlugin)
 	return nil
 }
@@ -167,7 +168,19 @@ func (dockerPlugin *DockerPlugin) Extract(req sdk.ExtractRequest, evt sdk.EventR
 
 // Open is called by Falco plugin framework for opening a stream of events, we call that an instance
 func (dockerPlugin *DockerPlugin) Open(params string) (source.Instance, error) {
-	return &DockerInstance{}, nil
+	dclient, err := docker.NewClientWithOpts()
+	if err != nil {
+		return nil, err
+	}
+
+	ctx := context.Background()
+	msgC, errC := dclient.Events(ctx, dockerTypes.EventsOptions{})
+	return &DockerInstance{
+		dclient: dclient,
+		msgC:    msgC,
+		errC:    errC,
+		ctx:     ctx,
+	}, nil
 }
 
 // String represents the raw value of on event
@@ -184,55 +197,35 @@ func (dockerPlugin *DockerPlugin) String(in io.ReadSeeker) (string, error) {
 
 // NextBatch is called by Falco plugin framework to get a batch of events from the instance
 func (dockerInstance *DockerInstance) NextBatch(pState sdk.PluginState, evts sdk.EventWriters) (int, error) {
-	dclient, err := docker.NewClientWithOpts()
-	if err != nil {
-		panic(err)
-	}
-
-	ctx := context.Background()
-	defer ctx.Done()
-
-	msg, _ := dclient.Events(ctx, dockerTypes.EventsOptions{})
-
-	e := [][]byte{}
-
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
 	dockerPlugin := pState.(*DockerPlugin)
 
-L:
-	for {
-		expire := time.After(time.Duration(dockerPlugin.FlushInterval) * time.Second)
+	i := 0
+	expire := time.After(time.Duration(dockerPlugin.FlushInterval) * time.Millisecond)
+	for i < evts.Len() {
 		select {
-		case m := <-msg:
+		case m := <-dockerInstance.msgC:
 			s, _ := json.Marshal(m)
-			e = append(e, s)
-			if len(e) >= evts.Len() {
-				break L
+			evt := evts.Get(i)
+			if _, err := evt.Writer().Write(s); err != nil {
+				return i, err
 			}
+			i++
 		case <-expire:
-			if len(e) != 0 {
-				break L
-			}
-		case <-c:
-			return 0, sdk.ErrEOF
+			// Timeout occurred, flush a partial batch
+			return i, sdk.ErrTimeout
+		case err := <-dockerInstance.errC:
+			// todo: this will cause the program to exit. May we want to ignore some kind of error?
+			return i, err
 		}
 	}
 
-	if len(e) == 0 {
-		return 0, nil
-	}
+	// The batch is full
+	return i, nil
+}
 
-	for n, i := range e {
-		evt := evts.Get(n)
-		_, err := evt.Writer().Write(i)
-		if err != nil {
-			return 0, err
-		}
-	}
-
-	return len(e), nil
+func (dockerInstance *DockerInstance) Close() {
+	dockerInstance.ctx.Done()
 }
 
 // main is mandatory but empty, because the plugin will be used as C library by Falco plugin framework
