@@ -10,6 +10,7 @@ The plugin also exports fields that extract information from a `docker` event, s
 - [Development](#development)
   - [Requirements](#requirements)
   - [Build](#build)
+- [Settings](#settings)
 - [Configurations](#configurations)
 - [Usage](#usage)
   - [Requirements](#requirements-1)
@@ -56,27 +57,32 @@ You need:
 make
 ```
 
+# Settings
+
+Only `init` accepts settings:
+* `flushinterval`: time en ms between two flushes of events from `docker` to `Falco`
+
 # Configurations
 
 * `falco.yaml`
 
-```yaml
-plugins:
-  - name: docker
-    library_path: /etc/falco/audit/libdocker.so
-    init_config: '{"flushinterval": 1}'
-    open_params: ''
+  ```yaml
+  plugins:
+    - name: docker
+      library_path: /etc/falco/audit/libdocker.so
+      init_config: '{"flushinterval": 10}'
+      open_params: ''
 
-load_plugins: [docker]
+  load_plugins: [docker]
 
-stdout_output:
-  enabled: true
-```
-> :bulb: `init_config` can also set in `yaml` format:
-> ```yaml
-> init_config:
->   flushinterval: 1
-> ```
+  stdout_output:
+    enabled: true
+  ```
+  > :bulb: `init_config` can also set in `yaml` format:
+  > ```yaml
+  > init_config:
+  >   flushinterval: 10
+  > ```
 
 * `rules.yaml`
 
