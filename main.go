@@ -74,7 +74,10 @@ func (dockerPlugin *DockerPlugin) Info() *plugins.Info {
 // values from `init_config` (json format for this plugin)
 func (dockerPlugin *DockerPlugin) Init(config string) error {
 	dockerPlugin.FlushInterval = 30
-	json.Unmarshal([]byte(config), &dockerPlugin)
+	err := json.Unmarshal([]byte(config), &dockerPlugin)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
