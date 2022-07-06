@@ -1,3 +1,4 @@
 libdocker.so
 .fuse*
 dist
+.vscode

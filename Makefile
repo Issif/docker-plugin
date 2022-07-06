@@ -15,7 +15,8 @@ SHELL=/bin/bash -o pipefail
 GO ?= go
 
 NAME := docker
-OUTPUT := /usr/share/falco/plugins/lib$(NAME).so
+OUTPUT := lib$(NAME).so
+DESTDIR := /usr/share/falco/plugins
 
 ifeq ($(DEBUG), 1)
     GODEBUGFLAGS= GODEBUG=cgocheck=2
@@ -23,10 +24,13 @@ else
     GODEBUGFLAGS= GODEBUG=cgocheck=0
 endif
 
-all: $(OUTPUT)
+all: build
 
 clean:
-	@rm -f *.so *.h
+	@rm -f lib$(NAME).so
 
-$(OUTPUT): *.go clean
-	@$(GODEBUGFLAGS) $(GO) build -buildmode=c-shared -o $(OUTPUT)
+build: clean
+	@$(GODEBUGFLAGS) $(GO) build -buildmode=c-shared -buildvcs=false -o $(OUTPUT) ./plugin
+
+install: build
+	mv $(OUTPUT) $(DESTDIR)/

@@ -10,6 +10,7 @@ The plugin also exports fields that extract information from a `docker` event, s
 - [Development](#development)
   - [Requirements](#requirements)
   - [Build](#build)
+  - [Install](#install)
 - [Settings](#settings)
 - [Configurations](#configurations)
 - [Usage](#usage)
@@ -54,7 +55,13 @@ You need:
 ## Build
 
 ```shell
-make
+make build
+```
+
+## Install
+
+```shell
+make install
 ```
 
 # Settings
