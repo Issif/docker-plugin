@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/alecthomas/jsonschema v0.0.0-20220203024042-cc89723c9db0
 	github.com/docker/docker v20.10.12+incompatible
-	github.com/falcosecurity/plugin-sdk-go v0.1.0
+	github.com/falcosecurity/plugin-sdk-go v0.5.0
 	github.com/moby/docker v20.10.12+incompatible
 )
 
