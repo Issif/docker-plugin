@@ -8,24 +8,24 @@ import (
 )
 
 const (
-	PluginID          uint32 = 5
-	PluginName               = "docker"
-	PluginDescription        = "Docker Events"
-	PluginContact            = "github.com/falcosecurity/plugins/"
-	PluginVersion            = "0.2.0"
-	PluginEventSource        = "docker"
+	ID          uint32 = 5
+	Name               = "docker"
+	Description        = "Docker Events"
+	Contact            = "github.com/falcosecurity/plugins/"
+	Version            = "0.2.0"
+	EventSource        = "docker"
 )
 
 func init() {
 	plugins.SetFactory(func() plugins.Plugin {
 		p := &docker.Plugin{}
 		p.SetInfo(
-			PluginID,
-			PluginName,
-			PluginDescription,
-			PluginContact,
-			PluginVersion,
-			PluginEventSource,
+			ID,
+			Name,
+			Description,
+			Contact,
+			Version,
+			EventSource,
 		)
 		extractor.Register(p)
 		source.Register(p)

@@ -18,12 +18,12 @@ import (
 )
 
 var (
-	PluginID          uint32
-	PluginName        string
-	PluginDescription string
-	PluginContact     string
-	PluginVersion     string
-	PluginEventSource string
+	ID          uint32
+	Name        string
+	Description string
+	Contact     string
+	Version     string
+	EventSource string
 )
 
 type PluginConfig struct {
@@ -45,22 +45,22 @@ func (p *PluginConfig) setDefault() {
 
 // SetInfo is used to set the Info of the plugin
 func (p *Plugin) SetInfo(id uint32, name, description, contact, version, eventSource string) {
-	PluginID = id
-	PluginName = name
-	PluginContact = contact
-	PluginVersion = version
-	PluginEventSource = eventSource
+	ID = id
+	Name = name
+	Contact = contact
+	Version = version
+	EventSource = eventSource
 }
 
 // Info displays information of the plugin to Falco plugin framework
 func (p *Plugin) Info() *plugins.Info {
 	return &plugins.Info{
-		ID:          PluginID,
-		Name:        PluginName,
-		Description: PluginDescription,
-		Contact:     PluginContact,
-		Version:     PluginVersion,
-		EventSource: PluginEventSource,
+		ID:          ID,
+		Name:        Name,
+		Description: Description,
+		Contact:     Contact,
+		Version:     Version,
+		EventSource: EventSource,
 	}
 }
 
