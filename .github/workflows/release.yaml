@@ -1,0 +1,40 @@
+name: Release Plugins
+
+on:
+  push:
+    tags:
+      - '*'
+
+env:
+  REGISTRY: ghcr.io
+  PACKAGE_NAME: ${{ github.repository }}
+  TAG: ${{github.ref_name}}
+
+permissions:
+  contents: write # needed to write releases
+  id-token: write # needed for keyless signing
+
+jobs:
+  publish-oci-artifacts:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ['1.17']
+      fail-fast: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Setup Golang ${{ matrix.go-version }}
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: Build the plugin
+        run: make build
+      - uses: oras-project/setup-oras@v1
+      - name: Upload OCI artifacts to GitHub packages
+        run: >
+          oras push oci://${REGISTRY}/${PACKAGE_NAME}:${TAG} \
+          --artifact-type application/vnd.cncf.falco.rulesfile.config.v1+json \
+          ./libdocker.so

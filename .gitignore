@@ -2,3 +2,4 @@ libdocker.so
 .fuse*
 dist
 .vscode
+falco.yaml
