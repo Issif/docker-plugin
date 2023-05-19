@@ -1,6 +1,6 @@
 module github.com/Issif/docker-plugin
 
-go 1.17
+go 1.19
 
 require (
 	github.com/alecthomas/jsonschema v0.0.0-20220216202328-9eeeec9d044b

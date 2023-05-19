@@ -4,37 +4,70 @@ on:
   push:
     tags:
       - '*'
-
+  
 env:
   REGISTRY: ghcr.io
-  PACKAGE_NAME: ${{ github.repository }}
-  TAG: ${{github.ref_name}}
-
+  PLUGIN_NAME: docker
+    
 permissions:
-  contents: write # needed to write releases
-  id-token: write # needed for keyless signing
+  contents: write
+  packages: write
 
 jobs:
   publish-oci-artifacts:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: ['1.17']
-      fail-fast: true
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - name: Setup Golang ${{ matrix.go-version }}
+      - name: Setup Golang
         uses: actions/setup-go@v3
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version: '1.19'
       - name: Build the plugin
         run: make build
       - uses: oras-project/setup-oras@v1
+      - name: Auth to GHCR
+        run: echo ${{ secrets.GITHUB_TOKEN }} | oras login ghcr.io -u ${{ github.repository_owner }} --password-stdin
+      - id: ToLowerRepoName
+        uses: ASzc/change-string-case-action@v5
+        with:
+          string: ${{ github.repository }}
+      - name: Create archives
+        shell: bash
+        run: |
+          tar cvzf lib${{ env.PLUGIN_NAME }}.so.tar.gz lib${{ env.PLUGIN_NAME }}.so
+          tar cvzf ${{ env.PLUGIN_NAME }}_rules.yaml.tar.gz rules/${{ env.PLUGIN_NAME }}_rules.yaml
       - name: Upload OCI artifacts to GitHub packages
-        run: >
-          oras push oci://${REGISTRY}/${PACKAGE_NAME}:${TAG} \
-          --artifact-type application/vnd.cncf.falco.rulesfile.config.v1+json \
-          ./libdocker.so
+        shell: bash
+        run: |
+          echo "{\"name\":\"${{ env.PLUGIN_NAME }}\",\"version\":\"${{ github.ref_name }}\"}" > config.json
+          oras push ${{ env.REGISTRY }}/${{ steps.ToLowerRepoName.outputs.lowercase }}/plugin/${{ env.PLUGIN_NAME }}:${{ github.ref_name }},latest \
+          --config config.json:application/vnd.cncf.falco.plugin.config.v1+json \
+          ./lib${{ env.PLUGIN_NAME }}.so.tar.gz:application/vnd.cncf.falco.plugin.layer.v1+tar.gz
+          echo "{\"name\":\"${{ env.PLUGIN_NAME }}-rules\",\"version\":\"${{ github.ref_name }}\"}" > config.json
+          oras push ${{ env.REGISTRY }}/${{ steps.ToLowerRepoName.outputs.lowercase }}/ruleset/${{ env.PLUGIN_NAME }}:${{ github.ref_name }},latest \
+           --config config.json:application/vnd.cncf.falco.rulesfile.config.v1+json \
+           ./${{ env.PLUGIN_NAME }}_rules.yaml.tar.gz:application/vnd.cncf.falco.rulesfile.layer.v1+tar.gz
+
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Setup Golang
+        uses: actions/setup-go@v3
+        with:
+          go-version: '1.19'
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v4
+        with:
+          version: latest
+          args: release --clean --timeout 120m
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LDFLAGS: "-buildmode=c-shared"
+          GOPATH: /home/runner/go

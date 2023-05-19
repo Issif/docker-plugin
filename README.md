@@ -10,7 +10,9 @@ The plugin also exports fields that extract information from a `docker` event, s
 - [Development](#development)
   - [Requirements](#requirements)
   - [Build](#build)
-  - [Install](#install)
+- [Installation](#installation)
+  - [Local](#local)
+  - [With falcoctl](#with-falcoctl)
 - [Settings](#settings)
 - [Configurations](#configurations)
 - [Usage](#usage)
@@ -50,7 +52,7 @@ The event source for `docker` events is `docker`.
 ## Requirements
 
 You need:
-* `Go` >= 1.17
+* `Go` >= 1.19
 
 ## Build
 
@@ -58,10 +60,46 @@ You need:
 make build
 ```
 
-## Install
+# Installation
+
+## Local
 
 ```shell
 make install
+```
+ 
+## With falcoctl
+
+Add the index:
+```shell
+sudo falcoctl index add docker https://raw.githubusercontent.com/Issif/docker-plugin/workflow/index.yaml
+```
+
+Search for the artifacts:
+```shell
+sudo falcoctl artifact search docker
+```
+
+```shell
+INDEX   ARTIFACT        TYPE            REGISTRY        REPOSITORY                              
+docker  docker-rules    rulesfile       ghcr.io         issif/docker-plugin/ruleset/docker-rules
+docker  docker          plugin          ghcr.io         issif/docker-plugin/plugin/docker 
+```
+
+Install the plugin and the rules:
+```shell
+sudo falcoctl artifact install docker-rules:latest
+```
+
+```shell
+ INFO  Reading all configured index files from "/root/.config/falcoctl/indexes.yaml"
+ INFO  Resolving dependencies ...
+ INFO  Installing the following artifacts: [ghcr.io/issif/docker-plugin/ruleset/docker:latest]
+ INFO  Preparing to pull "ghcr.io/issif/docker-plugin/ruleset/docker:latest"
+ INFO  Pulling c09e07b53699: ############################################# 100% 
+ INFO  Pulling 1be5f42ebc40: ############################################# 100% 
+ INFO  Pulling 751af53627f8: ############################################# 100% 
+ INFO  Artifact successfully installed in "/etc/falco"  
 ```
 
 # Settings
@@ -76,7 +114,7 @@ Only `init` accepts settings:
   ```yaml
   plugins:
     - name: docker
-      library_path: /etc/falco/audit/libdocker.so
+      library_path: /usr/share/falco/plugins/libdocker.so
       init_config: '{"flushinterval": 10}'
       open_params: ''
 
@@ -114,7 +152,7 @@ falco -c falco.yaml -r docker_rules.yaml
 
 ## Requirements
 
-* `Falco` >= 0.31
+* `Falco` >= 0.34
 
 ## Results
 

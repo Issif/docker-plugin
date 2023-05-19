@@ -1,0 +1,28 @@
+- name: docker
+  type: plugin
+  registry: ghcr.io
+  repository: issif/docker-plugin/plugin/docker
+  description: Reads events from Docker Engine
+  home: https://github.com/Issif/docker-plugin
+  keywords:
+    - docker
+  license: Apache-2.0
+  maintainers:
+    - email: issif+github@gadz.org
+      name: Thomas Labarussias
+  sources:
+    - https://github.com/Issif/docker-plugin
+- name: docker-rules
+  type: rulesfile
+  registry: ghcr.io
+  repository: issif/docker-plugin/ruleset/docker
+  description: Rules for the Docker plugin
+  home: https://github.com/Issif/docker-plugin/tree/main/rules
+  keywords:
+    - docker
+  license: Apache-2.0
+  maintainers:
+    - email: issif+github@gadz.org
+      name: Thomas Labarussias
+  sources:
+    - https://github.com/Issif/docker-plugin/tree/main/rules/docker_rules.yaml
