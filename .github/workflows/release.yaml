@@ -65,7 +65,7 @@ jobs:
               --type rulesfile \
               --version "${{ github.ref_name }}" \
               --tag latest --tag $MAJOR --tag $MINOR \
-              --depends-on {{ env.PLUGIN_NAME }}:${{ github.ref_name }} \
+              --depends-on ${{ env.PLUGIN_NAME }}:${{ github.ref_name }} \
               ${{ env.OCI_REGISTRY }}/${{ steps.StringRepoName.outputs.lowercase }}/ruleset/${{ env.PLUGIN_NAME }}:${{ github.ref_name }} ${{ env.PLUGIN_NAME }}_rules.yaml
         env:
           FALCOCTL_REGISTRY_AUTH_BASIC: ${{ env.OCI_REGISTRY }},${{ github.repository_owner }},${{ secrets.GITHUB_TOKEN }}
