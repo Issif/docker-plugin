@@ -4,9 +4,9 @@ go 1.19
 
 require (
 	github.com/alecthomas/jsonschema v0.0.0-20220216202328-9eeeec9d044b
-	github.com/docker/docker v23.0.0+incompatible
-	github.com/falcosecurity/plugin-sdk-go v0.6.2
-	github.com/moby/docker v23.0.0+incompatible
+	github.com/docker/docker v24.0.2+incompatible
+	github.com/falcosecurity/plugin-sdk-go v0.7.1
+	github.com/moby/docker v24.0.2+incompatible
 )
 
 require (
@@ -22,10 +22,10 @@ require (
 	github.com/opencontainers/image-spec v1.1.0-rc3 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sirupsen/logrus v1.9.2 // indirect
-	golang.org/x/mod v0.10.0 // indirect
-	golang.org/x/net v0.10.0 // indirect
-	golang.org/x/sys v0.8.0 // indirect
-	golang.org/x/tools v0.9.1 // indirect
+	golang.org/x/mod v0.11.0 // indirect
+	golang.org/x/net v0.11.0 // indirect
+	golang.org/x/sys v0.9.0 // indirect
+	golang.org/x/tools v0.9.3 // indirect
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect
 	google.golang.org/grpc v1.55.0 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
